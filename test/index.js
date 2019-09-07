@@ -17,7 +17,7 @@ const diorama = new Diorama({
     bob: dna,
   },
   bridges: [],
-  debugLog: true,
+  debugLog: false,
   executor: tapeExecutor(require('tape')),
   middleware: backwardCompatibilityMiddleware,
 })

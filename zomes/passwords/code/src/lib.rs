@@ -10,7 +10,6 @@ extern crate holochain_json_derive;
 use hdk::{
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
-    api::entry_address,
 };
 use hdk::holochain_core_types::{
     entry::Entry,
@@ -70,16 +69,15 @@ pub fn handle_link_credential_to_domain(base: Address,target : Address) -> ZomeA
 }
 
 
-pub fn handle_get_credentials_for_domain(domainname: String) -> ZomeApiResult<Option<Entry>> {
+pub fn handle_get_credentials_for_domain(domainname: String) -> ZomeApiResult<Vec<ZomeApiResult<Entry>>> {
     let domain_address = Entry::App("domain".into(), Domain {domainname}.into());
-    let domain_hash = HDK::entry_address(&domain_address);
-    HDK::get_links_and_load(
-        domain_hash,
+    let domain_hash = hdk::entry_address(&domain_address)?;
+    hdk::get_links_and_load(
+        &domain_hash,
         LinkMatch::Exactly("has_credentials"),
         LinkMatch::Any
         )
 
-    hdk::get_entry(&address)
 }
 
 fn credentials_definition() -> ValidatingEntryType {
@@ -153,7 +151,7 @@ define_zome! {
         }
         get_credentials_for_domain: {
             inputs: |domainname: String|,
-            outputs: |result: ZomeApiResult<Option<Entry>>|,
+            outputs: |result: ZomeApiResult<Vec<ZomeApiResult<Entry>>>|,
             handler: handle_get_credentials_for_domain
         }
         link_credential_to_domain: {
