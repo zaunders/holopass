@@ -10,10 +10,12 @@ extern crate holochain_json_derive;
 use hdk::{
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
+    api::entry_address,
 };
 use hdk::holochain_core_types::{
     entry::Entry,
     dna::entry_types::Sharing,
+    link::LinkMatch,
 };
 
 use hdk::holochain_persistence_api::{
@@ -22,7 +24,7 @@ use hdk::holochain_persistence_api::{
 
 use hdk::holochain_json_api::{
     error::JsonError,
-    json::JsonString,
+    json::{JsonString},
 };
 
 
@@ -32,37 +34,64 @@ use hdk::holochain_json_api::{
 // agent's chain via the exposed function create_my_entry
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
-pub struct credentials {
+pub struct Credentials {
     username: String,
     password: String,
 }
-
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
-pub struct domain {
+pub struct Domain {
     domainname: String,
 }
 
+pub fn handle_store_password(domainname: String, username: String, password: String) -> ZomeApiResult<Address> {
+    //call create domain, create credentials and link entries
+    let domainname_struct = Domain {domainname:domainname};
+    let domain_adress = handle_create_domain(domainname_struct)?;
+    let cred =Credentials {username: username, password:password};
+    let credentials_adress = handle_create_credentials(cred)?;
+    handle_link_credential_to_domain(domain_adress, credentials_adress)
+}
 
-pub fn handle_create_my_entry(entry: MyEntry) -> ZomeApiResult<Address> {
-    let entry = Entry::App("my_entry".into(), entry.into());
+
+pub fn handle_create_domain(entry: Domain) -> ZomeApiResult<Address> {
+    let entry = Entry::App("domain".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
 
-pub fn handle_get_my_entry(address: Address) -> ZomeApiResult<Option<Entry>> {
+pub fn handle_create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
+    let entry = Entry::App("credentials".into(), entry.into());
+    let address = hdk::commit_entry(&entry)?;
+    Ok(address)
+}
+
+pub fn handle_link_credential_to_domain(base: Address,target : Address) -> ZomeApiResult<Address> {
+    hdk::link_entries(&base, &target, "has_credentials", "")
+}
+
+
+pub fn handle_get_credentials_for_domain(domainname: String) -> ZomeApiResult<Option<Entry>> {
+    let domain_address = Entry::App("domain".into(), Domain {domainname}.into());
+    let domain_hash = HDK::entry_address(&domain_address);
+    HDK::get_links_and_load(
+        domain_hash,
+        LinkMatch::Exactly("has_credentials"),
+        LinkMatch::Any
+        )
+
     hdk::get_entry(&address)
 }
 
 fn credentials_definition() -> ValidatingEntryType {
     entry!(
         name: "credentials",
-        description: "this is a same entry defintion",
+        description: "a username and password for a domain",
         sharing: Sharing::Public,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: | _validation_data: hdk::EntryValidationData<credentials>| {
+        validation: | _validation_data: hdk::EntryValidationData<Credentials>| {
             Ok(())
         },
         links: [
@@ -82,15 +111,15 @@ fn credentials_definition() -> ValidatingEntryType {
 fn domains_definition() -> ValidatingEntryType {
     entry!(
         name: "domain",
-        description: "this is a same entry defintion",
+        description: "a website domain name",
         sharing: Sharing::Public,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: | _validation_data: hdk::EntryValidationData<domain>| {
+        validation: | _validation_data: hdk::EntryValidationData<Domain>| {
             Ok(())
-        },
+        }
     )
 }
 
@@ -107,19 +136,34 @@ define_zome! {
     }
 
     functions: [
-        create_credentials: {
-            inputs: |entry: MyEntry|,
+        store_password: {
+            inputs: |domainname: String, username: String, password: String|,
             outputs: |result: ZomeApiResult<Address>|,
-            handler: handle_create_my_entry
+            handler: handle_store_password
+        }
+        create_credentials: {
+            inputs: |entry: Credentials|,
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: handle_create_credentials
+        }
+        create_domain: {
+            inputs: |entry: Domain|,
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: handle_create_domain
         }
         get_credentials_for_domain: {
-            inputs: |address: Address|,
+            inputs: |domainname: String|,
             outputs: |result: ZomeApiResult<Option<Entry>>|,
-            handler: handle_get_my_entry
+            handler: handle_get_credentials_for_domain
+        }
+        link_credential_to_domain: {
+            inputs: |base : Address,target: Address|,
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: handle_link_credential_to_domain
         }
     ]
 
     traits: {
-        hc_public [create_my_entry,get_my_entry]
+        hc_public [store_password,get_credentials_for_domain]
     }
 }
