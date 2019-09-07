@@ -32,9 +32,16 @@ use hdk::holochain_json_api::{
 // agent's chain via the exposed function create_my_entry
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
-pub struct MyEntry {
-    content: String,
+pub struct credentials {
+    username: String,
+    password: String,
 }
+
+#[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
+pub struct domain {
+    domainname: String,
+}
+
 
 pub fn handle_create_my_entry(entry: MyEntry) -> ZomeApiResult<Address> {
     let entry = Entry::App("my_entry".into(), entry.into());
@@ -46,24 +53,51 @@ pub fn handle_get_my_entry(address: Address) -> ZomeApiResult<Option<Entry>> {
     hdk::get_entry(&address)
 }
 
-fn definition() -> ValidatingEntryType {
+fn credentials_definition() -> ValidatingEntryType {
     entry!(
-        name: "my_entry",
+        name: "credentials",
         description: "this is a same entry defintion",
         sharing: Sharing::Public,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: | _validation_data: hdk::EntryValidationData<MyEntry>| {
+        validation: | _validation_data: hdk::EntryValidationData<credentials>| {
             Ok(())
-        }
+        },
+        links: [
+            from!(
+                "domain",
+                link_type: "has_credentials",
+                validation_package: || {
+                    hdk::ValidationPackageDefinition::ChainFull
+                },
+                validation: | _validation_data: hdk::LinkValidationData | {
+                    Ok(())
+                }
+            )]
+    )
+}
+
+fn domains_definition() -> ValidatingEntryType {
+    entry!(
+        name: "domain",
+        description: "this is a same entry defintion",
+        sharing: Sharing::Public,
+        validation_package: || {
+            hdk::ValidationPackageDefinition::Entry
+        },
+
+        validation: | _validation_data: hdk::EntryValidationData<domain>| {
+            Ok(())
+        },
     )
 }
 
 define_zome! {
     entries: [
-       definition()
+       credentials_definition(),
+       domains_definition()
     ]
 
     init: || { Ok(()) }
@@ -73,12 +107,12 @@ define_zome! {
     }
 
     functions: [
-        create_my_entry: {
+        create_credentials: {
             inputs: |entry: MyEntry|,
             outputs: |result: ZomeApiResult<Address>|,
             handler: handle_create_my_entry
         }
-        get_my_entry: {
+        get_credentials_for_domain: {
             inputs: |address: Address|,
             outputs: |result: ZomeApiResult<Option<Entry>>|,
             handler: handle_get_my_entry
