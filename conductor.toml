@@ -1,0 +1,27 @@
+# -----------  Agents  -----------
+[[agents]]
+  id = "test_agent1"
+  name = "Agent 1"
+  public_address = "HcScjchNQtJujjaifjoFXFKoEGozt4ygyDtj9kPTHne779pgQ4YYqn4HwUkrdbz"
+  keystore_file = "/Users/viktorzaunders/Library/Preferences/org.holochain.holochain/keys/HcScjchNQtJujjaifjoFXFKoEGozt4ygyDtj9kPTHne779pgQ4YYqn4HwUkrdbz"
+
+# -----------  DNAs  -----------
+[[dnas]]
+  id = "holopass"
+  file = "./dist/holopass.dna.json"
+  hash = "QmSpT1hJYQNW3M5dntdcv2EhqerVKmGfmu6L5ET6fgdtYF"
+
+[[instances]]
+  id = "holopass_instance"
+  dna = "holopass"
+  agent = "test_agent1"
+[instances.storage]
+  type = "memory"
+
+[[interfaces]]
+  id = "websocket_interface"
+[interfaces.driver]
+  type = "websocket"
+  port = 3401
+[[interfaces.instances]]
+  id = "holopass_instance"

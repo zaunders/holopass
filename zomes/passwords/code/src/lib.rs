@@ -42,6 +42,7 @@ pub struct Domain {
     domainname: String,
 }
 
+
 pub fn handle_store_password(domainname: String, username: String, password: String) -> ZomeApiResult<Address> {
     //call create domain, create credentials and link entries
     let domainname_struct = Domain {domainname:domainname};
@@ -76,7 +77,7 @@ pub fn handle_get_credentials_for_domain(domainname: String) -> ZomeApiResult<Ve
         &domain_hash,
         LinkMatch::Exactly("has_credentials"),
         LinkMatch::Any
-        )
+    )
 
 }
 

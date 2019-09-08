@@ -28,15 +28,13 @@ diorama.registerScenario("create new password", async (s, t, { alice }) => {
   console.log(addr)
   t.ok(addr)
 
-})
-
-diorama.registerScenario("get credentials for domain", async (s, t, { alice }) => {
-  // enter pass info from UI
   const credential = await alice.call("passwords", "get_credentials_for_domain", {"domainname":"google.com"})
-  console.log(credential)
+  console.log(credential.Ok[0])
   t.ok(credential)
 
 })
+
+
 /*
 diorama.registerScenario("description of example test", async (s, t, { alice }) => {
   // Make a call to a Zome function
