@@ -1,3 +1,5 @@
+![logo](https://raw.githubusercontent.com/zaunders/holopass/master/UI/holopass_logo_export.png)
+
 # holopass
 
 Use Holonix configuration to get the right versions of Holochain and other dependencies.
